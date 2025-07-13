@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Voice Tester</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .input-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        
+        textarea:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 200px;
+        }
+        
+        .control-group label {
+            font-weight: bold;
+            color: #4a5568;
+            min-width: 70px;
+        }
+        
+        .control-group input[type="range"] {
+            flex: 1;
+            height: 6px;
+            background: #cbd5e0;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .control-group input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .control-group span {
+            font-weight: bold;
+            color: #667eea;
+            min-width: 50px;
+            text-align: center;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #cbd5e0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        #generateSelectedAudio {
+            background: #e53e3e;
+            font-size: 16px;
+            padding: 15px 30px;
+        }
+        
+        #generateSelectedAudio:hover {
+            background: #c53030;
+        }
+        
+        #generateSelectedAudio:disabled {
+            background: #cbd5e0;
+        }
+        
+        #downloadAudio {
+            background: #38a169;
+        }
+        
+        #downloadAudio:hover {
+            background: #2f855a;
+        }
+        
+        .voices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .voice-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .voice-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .voice-card.active {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+        
+        .voice-name {
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .voice-details {
+            font-size: 12px;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+        
+        .voice-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 12px;
+        }
+        
+        .btn-test {
+            background: #48bb78;
+        }
+        
+        .btn-test:hover {
+            background: #38a169;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #718096;
+        }
+        
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .success {
+            background: #c6f6d5;
+            color: #2f855a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        
+        .filter-section {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        select {
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+        }
+        
+        .audio-player {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        audio {
+            width: 100%;
+            max-width: 400px;
+        }
+
+        /* New emotion selector styles */
+        .emotion-selector {
+            background: #e6fffa;
+            border: 2px solid #38b2ac;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+
+        .emotion-title {
+            font-weight: bold;
+            color: #2c7a7b;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .emotion-controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .emotion-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .emotion-group label {
+            font-weight: bold;
+            color: #2c7a7b;
+            min-width: 80px;
+        }
+
+        .emotion-group select {
+            flex: 1;
+            border-color: #38b2ac;
+        }
+
+        .emotion-preview {
+            background: #f0fff4;
+            border: 1px solid #68d391;
+            border-radius: 5px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            color: #2f855a;
+        }
+
+        @media (max-width: 768px) {
+            .emotion-controls {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎤 Azure Voice Tester</h1>
+        
+        <div class="input-section">
+            <textarea id="textInput" placeholder="Escribe aquí el texto que quieres convertir a voz...">Hola, mi nombre es Luis José y esta es una prueba de síntesis de voz con Azure Cognitive Services. ¿Cómo suena mi voz?</textarea>
+            
+            <div class="voice-selection">
+                <div class="control-group">
+                    <label for="voiceSelect">Seleccionar Voz:</label>
+                    <select id="voiceSelect" disabled>
+                        <option value="">Primero carga las voces</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- New emotion selector section -->
+            <div class="emotion-selector">
+                <div class="emotion-title">🎭 Configuración Emocional</div>
+                <div class="emotion-controls">
+                    <div class="emotion-group">
+                        <label for="emotionSelect">Emoción:</label>
+                        <select id="emotionSelect">
+                            <option value="neutral">😐 Neutral</option>
+                            <optgroup label="✅ Emociones Básicas (Compatibles)">
+                                <option value="angry">😠 Enojado</option>
+                                <option value="excited">😄 Emocionado</option>
+                                <option value="cheerful">😊 Alegre</option>
+                                <option value="sad">😢 Triste</option>
+                                <option value="assistant">🤖 Asistente</option>
+                                <option value="newscast">📺 Noticiero</option>
+                            </optgroup>
+                            <optgroup label="🔄 Emociones Mapeadas (Convertidas automáticamente)">
+                                <option value="shouting">📢 Gritando → Emocionado</option>
+                                <option value="whispering">🤫 Susurrando → Alegre</option>
+                                <option value="terrified">😱 Aterrorizado → Triste</option>
+                                <option value="unfriendly">😤 Hostil → Enojado</option>
+                                <option value="gentle">😌 Gentil → Alegre</option>
+                                <option value="customerservice">👔 Servicio Cliente → Alegre</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="emotion-group">
+                        <label for="intensitySelect">Intensidad:</label>
+                        <select id="intensitySelect">
+                            <option value="0.5">Suave (0.5)</option>
+                            <option value="1.0" selected>Normal (1.0)</option>
+                            <option value="1.5">Moderada (1.5)</option>
+                            <option value="2.0">Fuerte (2.0)</option>
+                            <option value="2.5">Muy Fuerte (2.5)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="emotion-preview" id="emotionPreview">
+                    Configuración actual: Neutral con intensidad Normal
+                </div>
+            </div>
+            
+            <div class="voice-controls">
+                <div class="control-group">
+                    <label for="speedControl">Velocidad:</label>
+                    <input type="range" id="speedControl" min="0.5" max="2.0" step="0.1" value="1.0">
+                    <span id="speedValue">1.0x</span>
+                </div>
+                <div class="control-group">
+                    <label for="pitchControl">Tono:</label>
+                    <input type="range" id="pitchControl" min="-50%" max="50%" step="5%" value="0%">
+                    <span id="pitchValue">0%</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="loadVoices">Cargar Voces</button>
+                <button id="testBasic" disabled>🔧 Prueba Básica</button>
+                <button id="generateSelectedAudio" disabled>🎯 Generar Audio</button>
+                <button id="downloadAudio" disabled>📥 Descargar Audio</button>
+                <button id="clearAudio">Limpiar Audio</button>
+            </div>
+        </div>
+        
+        <div class="filter-section" style="display: none;" id="filterSection">
+            <select id="countryFilter">
+                <option value="">Todos los países</option>
+            </select>
+            
+            <select id="genderFilter">
+                <option value="">Todos los géneros</option>
+                <option value="Male">Masculino</option>
+                <option value="Female">Femenino</option>
+            </select>
+        </div>
+        
+        <div id="voicesContainer">
+            <div class="loading">
+                Haz clic en "Cargar Voces" para comenzar
+            </div>
+        </div>
+        
+        <div class="audio-player" id="audioContainer" style="display: none;">
+            <audio id="audioPlayer" controls></audio>
+            <p id="currentVoice"></p>
+        </div>
+    </div>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        
+        let voices = [];
+        let filteredVoices = [];
+        let currentAudioIndex = 0;
+        let testingMode = false;
+        
+        const elements = {
+            textInput: document.getElementById('textInput'),
+            loadVoices: document.getElementById('loadVoices'),
+            voiceSelect: document.getElementById('voiceSelect'),
+            testBasic: document.getElementById('testBasic'),
+            generateSelectedAudio: document.getElementById('generateSelectedAudio'),
+            downloadAudio: document.getElementById('downloadAudio'),
+            clearAudio: document.getElementById('clearAudio'),
+            voicesContainer: document.getElementById('voicesContainer'),
+            audioContainer: document.getElementById('audioContainer'),
+            audioPlayer: document.getElementById('audioPlayer'),
+            currentVoice: document.getElementById('currentVoice'),
+            filterSection: document.getElementById('filterSection'),
+            countryFilter: document.getElementById('countryFilter'),
+            genderFilter: document.getElementById('genderFilter'),
+            speedControl: document.getElementById('speedControl'),
+            speedValue: document.getElementById('speedValue'),
+            pitchControl: document.getElementById('pitchControl'),
+            pitchValue: document.getElementById('pitchValue'),
+            emotionSelect: document.getElementById('emotionSelect'),
+            intensitySelect: document.getElementById('intensitySelect'),
+            emotionPreview: document.getElementById('emotionPreview')
+        };
+
+        // Emotion descriptions for better UX
+        const emotionDescriptions = {
+            'neutral': 'Voz natural y equilibrada',
+            'angry': 'Voz enojada e intensa',
+            'excited': 'Voz emocionada y energética',
+            'cheerful': 'Voz alegre y positiva',
+            'sad': 'Voz melancólica y triste',
+            'shouting': 'Voz fuerte (usa emocionado)',
+            'whispering': 'Voz suave (usa alegre)',
+            'terrified': 'Voz asustada (usa triste)',
+            'unfriendly': 'Voz hostil (usa enojado)',
+            'gentle': 'Voz suave (usa alegre)',
+            'assistant': 'Voz profesional de asistente',
+            'newscast': 'Voz formal de noticiero',
+            'customerservice': 'Voz amable (usa alegre)'
+        };
+
+        // Update emotion preview
+        function updateEmotionPreview() {
+            const emotion = elements.emotionSelect.value;
+            const intensity = elements.intensitySelect.value;
+            const selectedVoice = elements.voiceSelect.value;
+            const description = emotionDescriptions[emotion] || 'Emoción personalizada';
+            
+            let previewText = `${description} con intensidad ${intensity}`;
+            
+            // Check if selected voice supports emotions
+            if (selectedVoice && emotion !== 'neutral') {
+                const supportsEmotions = selectedVoice.includes('Neural') || selectedVoice.includes('neural');
+                if (!supportsEmotions) {
+                    previewText += ' ⚠️ (Esta voz no soporta emociones - se usará voz neutral)';
+                    elements.emotionPreview.style.color = '#d69e2e';
+                } else {
+                    elements.emotionPreview.style.color = '#2f855a';
+                }
+            } else {
+                elements.emotionPreview.style.color = '#2f855a';
+            }
+            
+            elements.emotionPreview.textContent = previewText;
+        }
+
+        // Emotion control listeners
+        elements.emotionSelect.addEventListener('change', updateEmotionPreview);
+        elements.intensitySelect.addEventListener('change', updateEmotionPreview);
+        elements.voiceSelect.addEventListener('change', updateEmotionPreview);
+        
+        // Voice control listeners
+        elements.speedControl.addEventListener('input', (e) => {
+            const speed = parseFloat(e.target.value);
+            let speedText = speed + 'x';
+            
+            if (speed <= 0.5) speedText += ' (Muy Lento)';
+            else if (speed <= 0.75) speedText += ' (Lento)';
+            else if (speed <= 1.25) speedText += ' (Normal)';
+            else if (speed <= 1.5) speedText += ' (Rápido)';
+            else speedText += ' (Muy Rápido)';
+            
+            elements.speedValue.textContent = speedText;
+        });
+        
+        elements.pitchControl.addEventListener('input', (e) => {
+            const pitch = parseInt(e.target.value.replace('%', ''));
+            let pitchText = e.target.value;
+            
+            if (pitch <= -30) pitchText += ' (Muy Grave)';
+            else if (pitch <= -15) pitchText += ' (Grave)';
+            else if (pitch <= 15) pitchText += ' (Normal)';
+            else if (pitch <= 30) pitchText += ' (Agudo)';
+            else pitchText += ' (Muy Agudo)';
+            
+            elements.pitchValue.textContent = pitchText;
+        });
+        
+        // Load voices
+        elements.loadVoices.addEventListener('click', async () => {
+            elements.loadVoices.disabled = true;
+            elements.loadVoices.textContent = 'Cargando...';
+            
+            try {
+                voices = await ipcRenderer.invoke('get-voices');
+                populateVoiceSelect(voices);
+                displayVoices(voices);
+                setupFilters();
+                elements.filterSection.style.display = 'flex';
+                elements.voiceSelect.disabled = false;
+                elements.testBasic.disabled = false;
+                elements.generateSelectedAudio.disabled = false;
+                showMessage('Voces cargadas correctamente', 'success');
+            } catch (error) {
+                showMessage('Error al cargar voces: ' + error.message, 'error');
+            } finally {
+                elements.loadVoices.disabled = false;
+                elements.loadVoices.textContent = 'Cargar Voces';
+            }
+        });
+        
+        // Populate voice selector
+        function populateVoiceSelect(voicesToShow) {
+            elements.voiceSelect.innerHTML = '<option value="">Selecciona una voz</option>';
+            
+            // Group voices by country and gender
+            const groupedVoices = {};
+            voicesToShow.forEach(voice => {
+                const country = getCountryName(voice.Locale.split('-')[1]);
+                const gender = voice.Gender === 'Male' ? 'Masculino' : 'Femenino';
+                const key = `${country} - ${gender}`;
+                
+                if (!groupedVoices[key]) {
+                    groupedVoices[key] = [];
+                }
+                groupedVoices[key].push(voice);
+            });
+            
+            // Create optgroups
+            Object.keys(groupedVoices).sort().forEach(groupKey => {
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = groupKey;
+                
+                groupedVoices[groupKey].forEach(voice => {
+                    const option = document.createElement('option');
+                    option.value = voice.ShortName;
+                    option.textContent = voice.DisplayName;
+                    
+                    // Highlight Tristan if available
+                    if (voice.ShortName.includes('Tristan')) {
+                        option.textContent += ' ⭐ (Recomendado)';
+                        option.style.fontWeight = 'bold';
+                        option.style.color = '#e53e3e';
+                    }
+                    
+                    optgroup.appendChild(option);
+                });
+                
+                elements.voiceSelect.appendChild(optgroup);
+            });
+        }
+        
+        // Setup filters
+        function setupFilters() {
+            const countries = [...new Set(voices.map(v => v.Locale.split('-')[1]))];
+            
+            elements.countryFilter.innerHTML = '<option value="">Todos los países</option>';
+            countries.forEach(country => {
+                const option = document.createElement('option');
+                option.value = country;
+                option.textContent = getCountryName(country);
+                elements.countryFilter.appendChild(option);
+            });
+            
+            elements.countryFilter.addEventListener('change', filterVoices);
+            elements.genderFilter.addEventListener('change', filterVoices);
+        }
+        
+        function getCountryName(code) {
+            const countries = {
+                'ES': 'España',
+                'MX': 'México',
+                'AR': 'Argentina',
+                'CO': 'Colombia',
+                'CL': 'Chile',
+                'PE': 'Perú',
+                'VE': 'Venezuela',
+                'UY': 'Uruguay'
+            };
+            return countries[code] || code;
+        }
+        
+        function filterVoices() {
+            const countryFilter = elements.countryFilter.value;
+            const genderFilter = elements.genderFilter.value;
+            
+            filteredVoices = voices.filter(voice => {
+                const matchCountry = !countryFilter || voice.Locale.includes(countryFilter);
+                const matchGender = !genderFilter || voice.Gender === genderFilter;
+                return matchCountry && matchGender;
+            });
+            
+            displayVoices(filteredVoices);
+        }
+        
+        function displayVoices(voicesToShow) {
+            if (voicesToShow.length === 0) {
+                elements.voicesContainer.innerHTML = '<div class="loading">No se encontraron voces</div>';
+                return;
+            }
+            
+            const voicesHtml = voicesToShow.map(voice => {
+                const supportsEmotions = voice.ShortName.includes('Neural') || voice.ShortName.includes('neural');
+                const emotionBadge = supportsEmotions ? ' 🎭' : ' 🗣️';
+                const emotionText = supportsEmotions ? 'Soporta emociones' : 'Solo voz básica';
+                
+                return `
+                <div class="voice-card" data-voice="${voice.ShortName}">
+                    <div class="voice-name">${voice.DisplayName}${emotionBadge}</div>
+                    <div class="voice-details">
+                        ${getCountryName(voice.Locale.split('-')[1])} • ${voice.Gender === 'Male' ? 'Masculino' : 'Femenino'}<br>
+                        <small>${voice.ShortName}</small><br>
+                        <small style="color: ${supportsEmotions ? '#2f855a' : '#718096'};">${emotionText}</small>
+                    </div>
+                    <div class="voice-actions">
+                        <button class="btn-test btn-small" onclick="testVoice('${voice.ShortName}', '${voice.DisplayName}')">
+                            Probar
+                        </button>
+                    </div>
+                </div>
+            `;
+            }).join('');
+            
+            elements.voicesContainer.innerHTML = `<div class="voices-grid">${voicesHtml}</div>`;
+        }
+        
+        // Test basic synthesis (without emotions) for debugging
+        elements.testBasic.addEventListener('click', async () => {
+            const text = elements.textInput.value.trim();
+            const selectedVoice = elements.voiceSelect.value;
+            
+            if (!text) {
+                showMessage('Por favor escribe un texto para probar', 'error');
+                return;
+            }
+            
+            if (!selectedVoice) {
+                showMessage('Por favor selecciona una voz', 'error');
+                return;
+            }
+            
+            elements.testBasic.disabled = true;
+            elements.testBasic.textContent = 'Probando...';
+            
+            try {
+                showMessage(`Probando síntesis básica con ${selectedVoice}...`, 'success');
+                
+                // Force neutral emotion for basic test
+                const audioPath = await ipcRenderer.invoke('synthesize-speech', { 
+                    text, 
+                    voiceName: selectedVoice,
+                    speed: 1.0,
+                    pitch: '0%',
+                    emotion: 'neutral',
+                    intensity: '1.0'
+                });
+                
+                elements.audioPlayer.src = 'file://' + audioPath;
+                elements.currentVoice.textContent = `Prueba básica: ${selectedVoice}`;
+                elements.audioContainer.style.display = 'block';
+                
+                showMessage(`Prueba básica exitosa con ${selectedVoice}`, 'success');
+                
+            } catch (error) {
+                console.error('Error en prueba básica:', error);
+                showMessage('Error en prueba básica: ' + error.message, 'error');
+            } finally {
+                elements.testBasic.disabled = false;
+                elements.testBasic.textContent = '🔧 Prueba Básica';
+            }
+        });
+        
+        async function testVoice(voiceName, displayName) {
+            const text = elements.textInput.value.trim();
+            if (!text) {
+                showMessage('Por favor escribe un texto para probar', 'error');
+                return;
+            }
+            
+            try {
+                const speed = elements.speedControl.value;
+                const pitch = elements.pitchControl.value;
+                const emotion = elements.emotionSelect.value;
+                const intensity = elements.intensitySelect.value;
+                
+                showMessage(`Generando audio con ${displayName}...`, 'success');
+                const audioPath = await ipcRenderer.invoke('synthesize-speech', { 
+                    text, 
+                    voiceName,
+                    speed: speed,
+                    pitch: pitch,
+                    emotion: emotion,
+                    intensity: intensity
+                });
+                
+                elements.audioPlayer.src = 'file://' + audioPath;
+                elements.currentVoice.textContent = `Reproduciendo: ${displayName} (${emotionDescriptions[emotion]}, Vel: ${speed}x, Tono: ${pitch})`;
+                elements.audioContainer.style.display = 'block';
+                
+                // Highlight active voice card
+                document.querySelectorAll('.voice-card').forEach(card => card.classList.remove('active'));
+                const activeCard = document.querySelector(`[data-voice="${voiceName}"]`);
+                if (activeCard) activeCard.classList.add('active');
+                
+            } catch (error) {
+                showMessage('Error al generar audio: ' + error.message, 'error');
+            }
+        }
+        
+        // Generate audio with selected voice
+        elements.generateSelectedAudio.addEventListener('click', async () => {
+            const text = elements.textInput.value.trim();
+            const selectedVoice = elements.voiceSelect.value;
+            
+            if (!text) {
+                showMessage('Por favor escribe un texto para generar', 'error');
+                return;
+            }
+            
+            if (!selectedVoice) {
+                showMessage('Por favor selecciona una voz', 'error');
+                return;
+            }
+            
+            elements.generateSelectedAudio.disabled = true;
+            elements.generateSelectedAudio.textContent = 'Generando...';
+            
+            try {
+                const speed = elements.speedControl.value;
+                const pitch = elements.pitchControl.value;
+                const emotion = elements.emotionSelect.value;
+                const intensity = elements.intensitySelect.value;
+                
+                // Find voice display name
+                const voiceObj = voices.find(v => v.ShortName === selectedVoice);
+                const displayName = voiceObj ? voiceObj.DisplayName : selectedVoice;
+                
+                showMessage(`Generando audio con ${displayName}...`, 'success');
+                
+                const audioPath = await ipcRenderer.invoke('synthesize-speech', { 
+                    text, 
+                    voiceName: selectedVoice,
+                    speed: speed,
+                    pitch: pitch,
+                    emotion: emotion,
+                    intensity: intensity
+                });
+                
+                elements.audioPlayer.src = 'file://' + audioPath;
+                elements.currentVoice.textContent = `Reproduciendo: ${displayName} (${emotionDescriptions[emotion]}, Vel: ${speed}x, Tono: ${pitch})`;
+                elements.audioContainer.style.display = 'block';
+                elements.downloadAudio.disabled = false;
+                
+                // Store current audio path and info for download
+                window.currentAudioPath = audioPath;
+                window.currentVoiceInfo = {
+                    name: displayName,
+                    speed: speed,
+                    pitch: pitch,
+                    emotion: emotion,
+                    intensity: intensity,
+                    text: text.substring(0, 50) + (text.length > 50 ? '...' : '')
+                };
+                
+                showMessage(`Audio generado exitosamente con ${displayName}`, 'success');
+                
+                // Highlight the voice card if visible
+                document.querySelectorAll('.voice-card').forEach(card => card.classList.remove('active'));
+                const activeCard = document.querySelector(`[data-voice="${selectedVoice}"]`);
+                if (activeCard) activeCard.classList.add('active');
+                
+            } catch (error) {
+                showMessage('Error al generar audio: ' + error.message, 'error');
+            } finally {
+                elements.generateSelectedAudio.disabled = false;
+                elements.generateSelectedAudio.textContent = '🎯 Generar Audio';
+            }
+        });
+        
+        // Download audio
+        elements.downloadAudio.addEventListener('click', async () => {
+            if (!window.currentAudioPath) {
+                showMessage('No hay audio para descargar', 'error');
+                return;
+            }
+            
+            try {
+                // Generate suggested filename
+                const voiceInfo = window.currentVoiceInfo || {};
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+                const cleanText = (voiceInfo.text || 'audio').replace(/[^a-zA-Z0-9\s]/g, '').substring(0, 30);
+                const emotion = voiceInfo.emotion || 'neutral';
+                const suggestedName = `${cleanText}_${voiceInfo.name || 'voice'}_${emotion}_${timestamp}.mp3`.replace(/\s+/g, '_');
+                
+                const result = await ipcRenderer.invoke('save-audio-file', {
+                    audioPath: window.currentAudioPath,
+                    suggestedName: suggestedName
+                });
+                
+                if (result.success) {
+                    showMessage(`Audio guardado en: ${result.filePath}`, 'success');
+                } else {
+                    showMessage('Error al guardar el archivo', 'error');
+                }
+            } catch (error) {
+                showMessage('Error al descargar: ' + error.message, 'error');
+            }
+        });
+        
+        // Clear audio
+        elements.clearAudio.addEventListener('click', () => {
+            elements.audioPlayer.src = '';
+            elements.audioContainer.style.display = 'none';
+            elements.currentVoice.textContent = '';
+            elements.downloadAudio.disabled = true;
+            document.querySelectorAll('.voice-card').forEach(card => card.classList.remove('active'));
+            testingMode = false;
+            window.currentAudioPath = null;
+        });
+        
+        function showMessage(message, type) {
+            const existingMessage = document.querySelector('.error, .success');
+            if (existingMessage) existingMessage.remove();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            
+            elements.voicesContainer.parentNode.insertBefore(messageDiv, elements.voicesContainer);
+            
+            setTimeout(() => {
+                if (messageDiv.parentNode) {
+                    messageDiv.remove();
+                }
+            }, 5000);
+        }
+        
+        // Initialize emotion preview
+        updateEmotionPreview();
+        
+        // Make functions global for onclick handlers
+        window.testVoice = testVoice;
+    </script>
+</body>
+</html>
